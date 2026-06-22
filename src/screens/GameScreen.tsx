@@ -59,7 +59,7 @@ export default function GameScreen({ state, p, go, placeTile, removeSlot, confir
   return (
     <div style={{ padding: '16px 22px 22px', display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
 
-      {/* Progress dots + quit */}
+      {/* Progress dots + score + quit */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {LADDER.map((_, i) => (
@@ -72,6 +72,7 @@ export default function GameScreen({ state, p, go, placeTile, removeSlot, confir
             }} />
           ))}
         </div>
+        <span style={{ font: "700 13px 'Space Mono'", color: p.ink2 }}>{state.score}</span>
         <button
           onClick={() => go('home')}
           style={{ background: 'none', border: 'none', font: "700 12px 'Space Mono'", color: p.ink2, cursor: 'pointer' }}
