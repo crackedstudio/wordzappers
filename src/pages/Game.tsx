@@ -12,7 +12,6 @@ export default function Game() {
   const {
     builtPath, tray, slots, status, timeLeft, running, score, runResult,
     placeTile, removeSlot, confirmAnswer,
-    tickTimer, triggerTimeout,
     advanceRung, resetWrongGuess,
   } = useGameStore();
 
@@ -193,7 +192,13 @@ export default function Game() {
         font: "700 13px 'Space Mono'",
         color: status === 'wrong' ? '#d6604a' : status === 'correct' ? 'var(--accent)' : 'var(--ink2)',
       }}>
-        {status === 'wrong' ? 'Try again  −3s' : status === 'correct' ? 'Nice — climbing! ↑' : ' '}
+        {status === 'wrong'
+          ? 'Try again  −3s'
+          : status === 'correct'
+            ? 'Nice — climbing! ↑'
+            : confirmEnabled
+              ? 'Press Enter or tap CONFIRM'
+              : ' '}
       </div>
 
       {/* ── Confirm button ───────────────────────────────────────────────── */}
