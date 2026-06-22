@@ -99,6 +99,21 @@ export default function App() {
     }
   }, [state.status]);
 
+  // Keyboard shortcut: Enter → confirm in game, Backspace → remove last slot
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (state.screen !== 'game') return;
+      if (e.key === 'Enter') {
+        confirm();
+      } else if (e.key === 'Backspace') {
+        const lastFilled = [...state.slots].reverse().findIndex(id => id !== null);
+        if (lastFilled >= 0) removeSlot(state.slots.length - 1 - lastFilled);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [state.screen, state.slots, state.status]);
+
   // Clear filled-but-wrong tutorial tray after a short delay
   useEffect(() => {
     if (state.tutSlots.includes(null) || state.tutStatus !== 'idle') return;
