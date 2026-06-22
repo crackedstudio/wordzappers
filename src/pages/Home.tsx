@@ -13,11 +13,13 @@ const MOCK_TOP3 = [
 export default function Home() {
   const navigate = useNavigate();
   const {
-    streak, bestToday, unclaimed, tutorialDone,
+    streak, bestToday, unclaimed, tutorialDone, lastPlayedDate,
     startRun, startTutorial, toggleDark, dark,
   } = useGameStore();
 
-  const puzzle = getTodayPuzzle();
+  const puzzle  = getTodayPuzzle();
+  const today   = new Date().toISOString().slice(0, 10);
+  const streakAtRisk = streak > 0 && lastPlayedDate !== today;
   const start  = puzzle.path[0];
   const target = puzzle.path[puzzle.path.length - 1];
 
@@ -56,6 +58,18 @@ export default function Home() {
               </button>
             </div>
           </div>
+
+          {/* ── Streak-at-risk banner ───────────────────────────────────── */}
+          {streakAtRisk && (
+            <div style={{
+              background: '#fff7e6', border: '1.5px solid #f59e0b', borderRadius: '12px',
+              padding: '10px 16px', marginBottom: '12px',
+              font: "700 13px 'Space Mono'", color: '#92400e', display: 'flex', gap: '8px',
+            }}>
+              <span>⚠️</span>
+              <span>Play today or your {streak}-day streak ends at midnight!</span>
+            </div>
+          )}
 
           {/* ── Streak chip ─────────────────────────────────────────────── */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
