@@ -90,6 +90,20 @@ export default function ResultScreen({ state, p, go }: Props) {
         </div>
       </div>
 
+      {/* Speed bonus callout (win only) */}
+      {isWin && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          background: p.surface, border: `1.5px solid ${p.line}`,
+          borderRadius: '12px', padding: '11px 16px',
+        }}>
+          <span style={{ fontSize: '18px' }}>⚡</span>
+          <span style={{ font: "700 13px 'Space Mono'", color: p.ink2 }}>
+            Speed bonus included in score
+          </span>
+        </div>
+      )}
+
       {/* Share card */}
       <div style={{ background: '#26221e', borderRadius: '16px', padding: '18px', fontFamily: "'Space Mono'", color: '#f4f0e8', border: '1.5px solid rgba(255,255,255,.06)' }}>
         <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '1px' }}>WORDZAPPER 🪜 — June 21</div>
