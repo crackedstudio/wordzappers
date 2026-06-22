@@ -1,0 +1,76 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Archivo', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ── Animations ── */
+
+@keyframes wz-shake {
+  10%, 90%  { transform: translateX(-2px); }
+  20%, 80%  { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60%  { transform: translateX(7px); }
+}
+
+@keyframes wz-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wz-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes wz-sweep {
+  0%,  18% { left: 2px; }
+  25%, 43% { left: 74px; }
+  50%, 68% { left: 146px; }
+  75%, 93% { left: 218px; }
+  100%     { left: 2px; }
+}
+
+@keyframes wz-rise {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wz-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+.wz-shake { animation: wz-shake 0.45s; }
+.wz-pop   { animation: wz-pop 0.4s; }
+.wz-rise  { animation: wz-rise 0.4s; }
+
+.wz-bob-0 { animation: wz-bob 3.2s infinite; animation-delay: 0s; }
+.wz-bob-1 { animation: wz-bob 3.2s infinite; animation-delay: 0.18s; }
+.wz-bob-2 { animation: wz-bob 3.2s infinite; animation-delay: 0.36s; }
+.wz-bob-3 { animation: wz-bob 3.2s infinite; animation-delay: 0.54s; }
+
+.wz-sweep-cursor {
+  animation: wz-sweep 3.2s infinite;
+  position: absolute;
+  top: 0;
+  z-index: 2;
+}
+
+.wz-pulse { animation: wz-pulse 0.7s infinite; }
