@@ -67,32 +67,33 @@ export default function Tutorial() {
           </div>
 
           {/* Animated demo */}
-          <div style={{ position: 'relative', width: '312px', height: '78px' }}>
+          <div style={{ position: 'relative', width: `${4*66 + 3*10}px`, height: '76px' }}>
             <div className="sweep-cursor" />
-            <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
               {WATCH_SCRAMBLED.map((l, i) => (
-                <div key={i} className="tile tile--source" style={{ cursor: 'default' }}>{l}</div>
+                <div key={i} className="tile tile--source" style={{ cursor: 'default' }}>
+                  <span style={{ fontSize: '28px', fontWeight: 800 }}>{l}</span>
+                </div>
               ))}
             </div>
           </div>
 
-          <div style={{ font: "700 24px 'Space Mono'", color: 'var(--accent)' }}>↓</div>
+          <div style={{ font: "700 22px 'Space Mono'", color: 'var(--accent)' }}>↓</div>
 
           {/* Formed word bob animation */}
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             {WATCH_FORMED.map((l, i) => (
               <div
                 key={i}
                 className={`tile anim-bob-${i}`}
                 style={{
-                  width: '64px', height: '78px', borderRadius: '13px',
+                  width: '66px', height: '76px', borderRadius: '10px',
                   background: 'var(--accent)',
-                  boxShadow: 'inset 0 -5px 0 rgba(0,0,0,.2), 0 3px 8px var(--accent-glow)',
-                  color: '#fff', font: '800 32px Archivo',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 3px 0 rgba(0,0,0,.22), 0 6px 18px var(--accent-glow)',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                {l}
+                <span style={{ fontSize: '28px', fontWeight: 800 }}>{l}</span>
               </div>
             ))}
           </div>
@@ -129,7 +130,7 @@ export default function Tutorial() {
         </div>
 
         {/* Answer slots */}
-        <div className={tutStatus === 'done' ? 'anim-pop' : ''} style={{ display: 'flex', gap: '12px' }}>
+        <div className={tutStatus === 'done' ? 'anim-pop' : ''} style={{ display: 'flex', gap: '10px' }}>
           {tutSlots.map((id, idx) => {
             const letter = id ? tutTray.find(t => t.id === id)?.letter ?? '' : '';
             const filled = !!id;
@@ -139,7 +140,7 @@ export default function Tutorial() {
                 className={`tile tile--slot${filled ? (tutStatus === 'done' ? ' correct' : ' filled') : ''}`}
                 onClick={() => filled && tutStatus !== 'done' ? removeTutSlot(idx) : undefined}
               >
-                <span>{letter}</span>
+                {letter && <span style={{ fontSize: '28px', fontWeight: 800 }}>{letter}</span>}
                 {filled && letter && <span className="tile-val">{tileValue(letter)}</span>}
               </div>
             );
@@ -147,7 +148,7 @@ export default function Tutorial() {
         </div>
 
         {/* Tray */}
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
           {tutTray.map(t => {
             const placed = tutSlots.includes(t.id);
             return (
@@ -156,7 +157,7 @@ export default function Tutorial() {
                 className={`tile tile--source${placed ? ' placed' : ''}`}
                 onClick={() => !placed ? placeTutTile(t.id) : undefined}
               >
-                <span>{placed ? '' : t.letter}</span>
+                {!placed && <span style={{ fontSize: '28px', fontWeight: 800 }}>{t.letter}</span>}
                 {!placed && <span className="tile-val">{tileValue(t.letter)}</span>}
               </div>
             );
