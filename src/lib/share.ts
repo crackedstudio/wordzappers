@@ -4,21 +4,23 @@ export function buildShareText(
   path: string[],
   score: number,
   dateStr: string,
+  gEarned?: number,
 ): string {
-  const rungs = path.length - 1;
-  const dots = '●'.repeat(rungs);
-  const start = path[0];
-  const target = path[path.length - 1];
-  const date = formatPuzzleDate(dateStr);
+  const rungs  = Math.max(0, path.length - 1);
+  const dots   = '●'.repeat(rungs);
+  const start  = path[0] ?? '';
+  const target = path[path.length - 1] ?? '';
+  const date   = formatPuzzleDate(dateStr);
+  const gLine  = gEarned ? `Earned ${gEarned.toFixed(2)} G$ 💚` : '';
 
   return [
     `WORDZAPPER 🪜 — ${date}`,
     `${start} → ${target}`,
     dots,
     `Score: ${score}`,
-    ``,
-    `wordzapper.app`,
-  ].join('\n');
+    gLine,
+    `Play & earn G$ at wordzapper.app`,
+  ].filter(Boolean).join('\n');
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {
@@ -28,4 +30,12 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function buildTwitterUrl(shareText: string): string {
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+}
+
+export function buildWarpcastUrl(shareText: string): string {
+  return `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`;
 }

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getTodayPuzzle, getTodayDateStr } from '../lib/puzzles';
 import { shuffleWord } from '../lib/tiles';
-import { calculateScore, computeGEarned, updateStreak, TOTAL_TIME } from '../lib/scoring';
+import { calculateScore, computeGEarned, updateStreak, getTimeLimit } from '../lib/scoring';
 import type { Tile } from '../lib/tiles';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -18,6 +18,7 @@ export interface GameStore {
   slots:      (string | null)[];
   status:     GameStatus;
   timeLeft:   number;
+  totalTime:  number;   // dynamic — set from puzzle word length on startRun
   running:    boolean;
   score:      number;
   runResult:  RunResult | null;
@@ -106,7 +107,8 @@ export const useGameStore = create<GameStore>()(
       tray:       [],
       slots:      [],
       status:     'idle',
-      timeLeft:   TOTAL_TIME,
+      timeLeft:   60,
+      totalTime:  60,
       running:    false,
       score:      0,
       runResult:  null,
@@ -142,14 +144,17 @@ export const useGameStore = create<GameStore>()(
       },
 
       startRun() {
-        const path = getTodayPuzzle().path;
-        const tray = shuffleWord(path[1]);
+        const path      = getTodayPuzzle().path;
+        const wordLen   = path[1].length;
+        const totalTime = getTimeLimit(wordLen);
+        const tray      = shuffleWord(path[1]);
         set({
           builtPath: [path[0]],
           tray,
-          slots:     Array(path[1].length).fill(null),
+          slots:     Array(wordLen).fill(null),
           status:    'idle',
-          timeLeft:  TOTAL_TIME,
+          timeLeft:  totalTime,
+          totalTime,
           running:   true,
           score:     0,
           runResult: null,
@@ -210,19 +215,21 @@ export const useGameStore = create<GameStore>()(
 
       triggerTimeout() {
         const { builtPath } = get();
-        const rungs = builtPath.length - 1;
-        const finalScore = calculateScore(rungs, 0, false);
+        const wordLen    = getTodayPuzzle().path[1]?.length ?? 4;
+        const rungs      = builtPath.length - 1;
+        const finalScore = calculateScore(rungs, 0, false, wordLen);
         set(endRunState(get, 'timeout', builtPath, finalScore));
       },
 
       advanceRung() {
         const { builtPath, timeLeft } = get();
-        const path = getTodayPuzzle().path;
-        const next = [...builtPath, path[builtPath.length]];
-        const runScore = next.length - 1; // rungs so far
+        const path    = getTodayPuzzle().path;
+        const wordLen = path[1]?.length ?? 4;
+        const next    = [...builtPath, path[builtPath.length]];
+        const runScore = next.length - 1;
 
         if (next.length >= path.length) {
-          const finalScore = calculateScore(runScore, timeLeft, true);
+          const finalScore = calculateScore(runScore, timeLeft, true, wordLen);
           set(endRunState(get, 'win', next, finalScore));
           return;
         }

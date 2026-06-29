@@ -1,8 +1,17 @@
 import { useNavigate } from 'react-router-dom';
+import { Flame, Sun, Moon, AlertTriangle, Sparkles } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import BottomNav from '../components/BottomNav';
-import { getTodayPuzzle } from '../lib/puzzles';
+import { getTodayPuzzle, DIFFICULTY_LABELS } from '../lib/puzzles';
 import { tileValue } from '../lib/tiles';
+import { getTimeLimit, computeGEarned } from '../lib/scoring';
+
+// Scale preview tiles so they fit the hero card even for 6-letter words
+function heroTileSize(wordLen: number) {
+  if (wordLen <= 4) return { w: 30, h: 38, fs: 14 };
+  if (wordLen <= 5) return { w: 24, h: 30, fs: 11 };
+  return                   { w: 20, h: 26, fs: 9  };
+}
 
 const MOCK_TOP3 = [
   { r: 1, n: 'okaforjoy', s: 1240 },
@@ -17,12 +26,18 @@ export default function Home() {
     startRun, startTutorial, toggleDark, dark,
   } = useGameStore();
 
-  const puzzle = getTodayPuzzle();
-  const today  = new Date().toISOString().slice(0, 10);
+  const puzzle    = getTodayPuzzle();
+  const today     = new Date().toISOString().slice(0, 10);
   const streakAtRisk = streak > 0 && lastPlayedDate !== today;
-  const start  = puzzle.path[0];
-  const target = puzzle.path[puzzle.path.length - 1];
-  const rungs  = puzzle.path.length - 1;
+  const start     = puzzle.path[0];
+  const target    = puzzle.path[puzzle.path.length - 1];
+  const rungs     = puzzle.path.length - 1;
+  const wordLen   = target.length;
+  const hts       = heroTileSize(wordLen);
+  const timeLimit = getTimeLimit(wordLen);
+  const diffLabel = DIFFICULTY_LABELS[puzzle.difficulty ?? 'easy'];
+  // Max G$ if player wins perfectly (score ≈ top tier) with current streak
+  const maxG      = computeGEarned(wordLen >= 6 ? 3500 : wordLen >= 5 ? 2200 : 1200, streak);
 
   function handlePlay() {
     if (!tutorialDone) {
@@ -49,12 +64,12 @@ export default function Home() {
             WORD<span style={{ color: 'var(--accent)' }}>ZAPPER</span>
           </h1>
           <p className="label-xs" style={{ marginTop: '3px', color: 'var(--ink3)' }}>
-            Climb · Unscramble · Earn G$
+            Play · Climb · Earn daily G$ UBI
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <div className="chip" style={{ padding: '5px 11px', gap: '5px' }}>
-            <span>🔥</span>
+            <Flame size={14} strokeWidth={2} />
             <span style={{ fontSize: '13px' }}>{streak}</span>
           </div>
           <button
@@ -67,13 +82,13 @@ export default function Home() {
             }}
             aria-label="Toggle dark mode"
           >
-            {dark ? '☀' : '☾'}
+            {dark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
           </button>
         </div>
       </header>
 
       <div className="page-scroll">
-        <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
           {/* ── Streak-at-risk warning ─────────────────────────────────── */}
           {streakAtRisk && (
@@ -82,7 +97,7 @@ export default function Home() {
               background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 'var(--r-md)',
               padding: '12px 16px', color: '#92400e',
             }}>
-              <span style={{ fontSize: '18px', flexShrink: 0 }}>⚠️</span>
+              <AlertTriangle size={18} strokeWidth={2} style={{ flexShrink: 0 }} />
               <span style={{ font: "700 13px 'Space Mono'", lineHeight: '1.4' }}>
                 Play today — your {streak}-day streak ends at midnight!
               </span>
@@ -120,38 +135,52 @@ export default function Home() {
               background: 'radial-gradient(ellipse 120% 80% at 80% 110%, rgba(224,123,0,.18) 0%, transparent 60%)',
               pointerEvents: 'none',
             }} />
-            <p className="label-xs" style={{ color: 'rgba(248,243,232,.45)', marginBottom: '16px' }}>
-              Today's ladder · {rungs} rungs
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <p className="label-xs" style={{ color: 'rgba(248,243,232,.7)', margin: 0 }}>
+                {diffLabel} · {rungs} rungs
+              </p>
+              {puzzle.isAI && (
+                <span style={{
+                  font: "700 9px 'Space Mono'", letterSpacing: '1px',
+                  background: 'rgba(255,255,255,.12)', color: 'rgba(248,243,232,.7)',
+                  borderRadius: '4px', padding: '2px 6px',
+                }}>
+                  <Sparkles size={9} strokeWidth={2} style={{ marginRight: 3 }} />AI
+                </span>
+              )}
+            </div>
 
             {/* Start → Target preview */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {/* Start word */}
-              <div style={{ display: 'flex', gap: '5px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
                 {start.split('').map((l, i) => (
-                  <div key={i} className="tile tile--sm" style={{
+                  <div key={i} style={{
+                    width: `${hts.w}px`, height: `${hts.h}px`, borderRadius: '6px',
                     background: 'rgba(255,255,255,.10)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,.12), 0 2px 0 rgba(0,0,0,.3)',
                     color: '#f8f3e8',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    font: `800 ${hts.fs}px Archivo`,
                   }}>
                     {l}
                   </div>
                 ))}
               </div>
 
-              {/* Arrow + step count */}
+              {/* Step dots */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
                 <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
                   {puzzle.path.slice(1, -1).map((_, i) => (
                     <span key={i} style={{
-                      width: '5px', height: '5px', borderRadius: '50%',
+                      width: '4px', height: '4px', borderRadius: '50%',
                       background: 'rgba(248,243,232,.3)', display: 'inline-block',
                     }} />
                   ))}
                 </div>
                 <span style={{
-                  font: "700 10px 'Space Mono'",
-                  color: 'rgba(248,243,232,.5)',
+                  font: "700 9px 'Space Mono'",
+                  color: 'rgba(248,243,232,.75)',
                   letterSpacing: '1px',
                 }}>
                   {rungs} steps
@@ -159,12 +188,15 @@ export default function Home() {
               </div>
 
               {/* Target word */}
-              <div style={{ display: 'flex', gap: '5px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
                 {target.split('').map((l, i) => (
-                  <div key={i} className="tile tile--sm" style={{
+                  <div key={i} style={{
+                    width: `${hts.w}px`, height: `${hts.h}px`, borderRadius: '6px',
                     background: 'var(--accent)',
                     boxShadow: '0 2px 0 rgba(0,0,0,.25), 0 4px 10px rgba(224,123,0,.4)',
                     color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    font: `800 ${hts.fs}px Archivo`,
                   }}>
                     {l}
                   </div>
@@ -172,9 +204,18 @@ export default function Home() {
               </div>
             </div>
 
-            <p style={{ font: "400 12px 'Space Mono'", color: 'rgba(248,243,232,.38)', marginTop: '16px' }}>
-              60 seconds · one letter changes per rung
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px' }}>
+              <p style={{ font: "400 12px 'Space Mono'", color: 'rgba(248,243,232,.65)', margin: 0 }}>
+                {timeLimit}s · one letter changes per rung
+              </p>
+              <div style={{
+                background: 'rgba(0,200,83,.18)', border: '1px solid rgba(0,200,83,.3)',
+                borderRadius: '8px', padding: '4px 10px',
+                font: "700 12px 'Space Mono'", color: '#4ade80',
+              }}>
+                ↑ {maxG.toFixed(2)} G$
+              </div>
+            </div>
           </div>
 
           {/* ── Stats ─────────────────────────────────────────────────── */}

@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wordzappers",
+      "runtimeExecutable": "/Users/0t41k1/Documents/wordzappers/node_modules/.bin/vite",
+      "runtimeArgs": ["--port", "5173"],
+      "port": 5173,
+      "autoPort": true
+    }
+  ]
+}

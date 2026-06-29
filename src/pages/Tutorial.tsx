@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { X, TrendingUp } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { tileValue } from '../lib/tiles';
 
@@ -50,11 +51,17 @@ export default function Tutorial() {
             onClick={handleSkip}
             style={{ background: 'none', border: 'none', font: "700 12px 'Space Mono'", color: 'var(--ink2)', cursor: 'pointer' }}
           >
-            Skip ✕
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>Skip <X size={13} strokeWidth={2.5} /></span>
           </button>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '36px', padding: '0 24px' }}>
+        <div style={{
+          flex: 1, minHeight: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(20px, 5dvh, 36px)', padding: '0 24px',
+          overflowY: 'auto',
+        }}>
 
           {/* Hero text */}
           <div style={{ textAlign: 'center' }}>
@@ -64,6 +71,16 @@ export default function Tutorial() {
             <p style={{ font: "400 14px 'Space Mono'", color: 'var(--ink2)', marginTop: '12px' }}>
               Unscramble each rung against the clock.
             </p>
+            <div style={{
+              marginTop: '14px',
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              background: 'var(--green-bg)', border: '1.5px solid var(--green-line)',
+              borderRadius: '10px', padding: '8px 14px',
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', font: "700 13px 'Space Mono'", color: 'var(--green-ink)' }}>
+                <TrendingUp size={14} strokeWidth={2} /> Win → earn G$ every day
+              </span>
+            </div>
           </div>
 
           {/* Animated demo */}
@@ -121,7 +138,13 @@ export default function Tutorial() {
         </button>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '32px', padding: '0 24px' }}>
+      <div style={{
+        flex: 1, minHeight: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: 'clamp(18px, 4dvh, 32px)', padding: '0 24px',
+        overflowY: 'auto',
+      }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ font: '700 18px Archivo', color: 'var(--ink)', margin: 0 }}>Tap the letters to spell</p>
           <p style={{ font: '900 44px Archivo', letterSpacing: '4px', color: 'var(--accent)', margin: '8px 0 0', lineHeight: '1' }}>
