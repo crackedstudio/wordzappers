@@ -1,4 +1,5 @@
 import { createHashRouter, RouterProvider } from 'react-router-dom';
+import AuthGate from './components/AuthGate';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Tutorial from './pages/Tutorial';
@@ -10,7 +11,7 @@ import Claim from './pages/Claim';
 const router = createHashRouter([
   {
     path: '/',
-    element: <Layout />,
+    element: <AuthGate><Layout /></AuthGate>,
     children: [
       { index: true,          element: <Home /> },
       { path: 'tutorial',     element: <Tutorial /> },

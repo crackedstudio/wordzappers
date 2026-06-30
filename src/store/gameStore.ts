@@ -66,6 +66,7 @@ export interface GameStore {
   setClaimState:   (s: ClaimState) => void;
   doClaim:         () => void;
   setWallet:       (addr: string) => void;
+  disconnect:      () => void;
   setLbTab:        (tab: 'today' | 'all') => void;
   toggleDark:      () => void;
 }
@@ -294,6 +295,10 @@ export const useGameStore = create<GameStore>()(
 
       setWallet(addr) {
         set({ walletAddress: addr, claimState: 'ready' });
+      },
+
+      disconnect() {
+        set({ walletAddress: null, claimState: 'idle', claimed: false });
       },
 
       // ── Misc ─────────────────────────────────────────────────────────────

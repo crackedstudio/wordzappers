@@ -3,20 +3,19 @@ import { Gamepad2, Check, BadgeCheck, AlertTriangle, Flame, Smartphone, External
 import { useGameStore } from '../store/gameStore';
 import { useClaim } from '../hooks/useClaim';
 import { computeGEarned } from '../lib/scoring';
-import { isMiniPay, hasWallet } from '../lib/wallet';
+import { isMiniPay } from '../lib/wallet';
 import { GOODDOLLAR_VERIFY_URL } from '../lib/chain';
 import BottomNav from '../components/BottomNav';
 
 export default function Claim() {
   const navigate = useNavigate();
   const { bestToday, streak, claimed } = useGameStore();
-  const { phase, address, txHash, error, connect, claim, retry } = useClaim();
+  const { phase, address, txHash, error, claim, retry } = useClaim();
 
   const hasEarnings  = (bestToday ?? 0) > 0;
   const gEarned      = bestToday ? computeGEarned(bestToday, streak) : 0;
   const totalReward  = gEarned.toFixed(2);
   const inMiniPay    = isMiniPay();
-  const walletAvail  = hasWallet();
 
   // ── No earnings yet ──────────────────────────────────────────────────────
   if (!hasEarnings && !claimed) {
@@ -129,79 +128,24 @@ export default function Claim() {
     );
   }
 
-  // ── Connect wallet ────────────────────────────────────────────────────────
-  if (phase === 'idle' || phase === 'connecting' || phase === 'checking') {
-    const busy  = phase === 'connecting' || phase === 'checking';
-    const label = phase === 'checking'
-      ? 'Checking identity…'
-      : phase === 'connecting'
-        ? 'Connecting…'
-        : inMiniPay
-          ? 'Connecting MiniPay…'
-          : walletAvail
-            ? 'Connect wallet'
-            : 'No wallet found';
-
+  // ── Checking identity ─────────────────────────────────────────────────────
+  if (phase === 'idle' || phase === 'checking') {
     return (
       <div className="page">
         <div className="topbar">
           <span className="topbar-title">Claim G$</span>
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', gap: '28px' }}>
-          <div style={{
-            width: '88px', height: '88px', borderRadius: '24px',
-            background: 'var(--green-bg)', border: '1.5px solid var(--green-line)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            font: '800 38px Archivo', color: '#00a345',
-          }}>
-            G$
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                width: '8px', height: '8px', borderRadius: '50%',
+                background: 'var(--accent)', opacity: 0.6,
+                animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+              }} />
+            ))}
           </div>
-          <div>
-            <h2 style={{ font: '800 24px Archivo', color: 'var(--ink)', margin: '0 0 10px', lineHeight: '1.25' }}>
-              {inMiniPay ? 'Connecting your\nMiniPay wallet…' : 'Claim your G$\ndaily reward'}
-            </h2>
-            <p style={{ font: "400 13px 'Space Mono'", color: 'var(--ink2)', margin: 0, maxWidth: '260px', lineHeight: '1.5' }}>
-              {inMiniPay
-                ? 'Detected MiniPay — connecting automatically…'
-                : 'Your G$ rewards are waiting. Verified humans only.'}
-            </p>
-          </div>
-          {!inMiniPay && (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button
-                className="btn-primary"
-                disabled={busy || !walletAvail}
-                style={{ opacity: (busy || !walletAvail) ? 0.6 : 1, cursor: (busy || !walletAvail) ? 'default' : 'pointer' }}
-                onClick={connect}
-              >
-                {label}
-              </button>
-              {!walletAvail && (
-                <p style={{ font: "400 12px 'Space Mono'", color: 'var(--ink3)', margin: 0 }}>
-                  Install <a href="https://minipay.opera.com" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>MiniPay</a> or <a href="https://valora.xyz" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Valora</a> to claim on-chain.
-                </p>
-              )}
-              <a
-                href="https://gooddollar.org"
-                target="_blank"
-                rel="noreferrer"
-                style={{ font: "700 13px 'Space Mono'", color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-              >
-                What is GoodDollar? <ExternalLink size={12} strokeWidth={2} />
-              </a>
-            </div>
-          )}
-          {inMiniPay && busy && (
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{
-                  width: '8px', height: '8px', borderRadius: '50%',
-                  background: 'var(--accent)', opacity: 0.6,
-                  animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-                }} />
-              ))}
-            </div>
-          )}
+          <p style={{ font: "400 13px 'Space Mono'", color: 'var(--ink2)' }}>Checking identity…</p>
         </div>
         <BottomNav />
       </div>

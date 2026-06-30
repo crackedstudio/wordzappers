@@ -1,73 +1,53 @@
 import { useState, useEffect } from 'react';
+import { useWriteContract } from 'wagmi';
 import { useGameStore } from '../store/gameStore';
-import {
-  connectWallet,
-  checkCitizen,
-  checkAlreadyPlayed,
-  claimOnChain,
-  isMiniPay,
-} from '../lib/wallet';
+import { checkCitizen, checkAlreadyPlayed } from '../lib/wallet';
+import { WORDZAPPER_CONTRACT, WORDZAPPER_ABI } from '../lib/chain';
+import { computeGEarned } from '../lib/scoring';
 
 export type ClaimPhase =
-  | 'idle'           // no wallet connected
-  | 'connecting'     // requesting accounts
-  | 'checking'       // isWhitelisted + hasPlayedToday
-  | 'not-citizen'    // wallet not GoodDollar verified
-  | 'ready'          // verified, hasn't played today
-  | 'claiming'       // tx in flight
-  | 'done'           // tx confirmed
+  | 'idle'
+  | 'checking'
+  | 'not-citizen'
+  | 'ready'
+  | 'claiming'
+  | 'done'
   | 'error';
 
-export function useClaim() {
-  const { bestToday, doClaim, setWallet, walletAddress } = useGameStore();
+function scoreTier(score: number): number {
+  if (score >= 3000) return 2;
+  if (score >= 1500) return 1;
+  return 0;
+}
 
-  const [phase, setPhase] = useState<ClaimPhase>(
-    walletAddress ? 'checking' : 'idle'
-  );
-  const [address, setAddress] = useState<`0x${string}` | null>(
-    walletAddress as `0x${string}` | null
-  );
+export function useClaim() {
+  const { bestToday, walletAddress, doClaim } = useGameStore();
+  const address = walletAddress as `0x${string}` | null;
+
+  const [phase, setPhase] = useState<ClaimPhase>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error,  setError]  = useState<string | null>(null);
 
-  // Auto-connect when running inside MiniPay — no connect button needed
-  useEffect(() => {
-    if (isMiniPay() && phase === 'idle') {
-      connect();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { writeContractAsync } = useWriteContract();
 
-  async function connect() {
-    setError(null);
-    setPhase('connecting');
-    try {
-      const addr = await connectWallet();
-      setAddress(addr);
-      setWallet(addr);
-      await checkStatus(addr);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Connection failed');
-      setPhase('error');
-    }
-  }
+  // Run identity + duplicate check once we have an address
+  useEffect(() => {
+    if (address) checkStatus(address);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
 
   async function checkStatus(addr: `0x${string}`) {
     setPhase('checking');
     try {
       const [citizen, played] = await Promise.all([
         checkCitizen(addr),
-        // Skip on-chain check if contract not yet deployed (zero address)
-        addr !== '0x0000000000000000000000000000000000000000'
-          ? checkAlreadyPlayed(addr)
-          : Promise.resolve(false),
+        checkAlreadyPlayed(addr),
       ]);
       if (!citizen) { setPhase('not-citizen'); return; }
       if (played)   { doClaim(); setPhase('done'); return; }
       setPhase('ready');
     } catch {
-      // If check fails (e.g. contract not deployed), still show ready so the
-      // contract itself will reject with the right error on submit.
+      // If chain read fails (e.g. RPC hiccup), still allow attempt — contract will reject
       setPhase('ready');
     }
   }
@@ -77,7 +57,14 @@ export function useClaim() {
     setError(null);
     setPhase('claiming');
     try {
-      const hash = await claimOnChain(bestToday);
+      const gEarned = computeGEarned(bestToday, 0);
+      const tier = scoreTier(bestToday);
+      const hash = await writeContractAsync({
+        address: WORDZAPPER_CONTRACT,
+        abi: WORDZAPPER_ABI,
+        functionName: 'claimReward',
+        args: [BigInt(bestToday), tier],
+      });
       setTxHash(hash);
       doClaim();
       setPhase('done');
@@ -89,8 +76,9 @@ export function useClaim() {
 
   function retry() {
     setError(null);
-    setPhase(address ? 'ready' : 'idle');
+    if (address) checkStatus(address);
+    else setPhase('idle');
   }
 
-  return { phase, address, txHash, error, connect, claim, retry };
+  return { phase, address, txHash, error, claim, retry };
 }

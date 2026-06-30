@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Sun, Moon, AlertTriangle, Sparkles } from 'lucide-react';
+import { useDisconnect } from 'wagmi';
+import { useWeb3AuthDisconnect } from '@web3auth/modal/react';
+import { Flame, Sun, Moon, AlertTriangle, Sparkles, LogOut } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import BottomNav from '../components/BottomNav';
 import { getTodayPuzzle, DIFFICULTY_LABELS } from '../lib/puzzles';
@@ -23,8 +26,22 @@ export default function Home() {
   const navigate = useNavigate();
   const {
     streak, bestToday, unclaimed, tutorialDone, lastPlayedDate,
-    startRun, startTutorial, toggleDark, dark,
+    walletAddress, startRun, startTutorial, toggleDark, dark, disconnect,
   } = useGameStore();
+  const [showDisconnect, setShowDisconnect] = useState(false);
+  const shortAddr = walletAddress
+    ? `${walletAddress.slice(0, 6)}…${walletAddress.slice(-4)}`
+    : '';
+
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { disconnect: web3authDisconnect } = useWeb3AuthDisconnect();
+
+  async function handleDisconnect() {
+    setShowDisconnect(false);
+    try { await web3authDisconnect(); } catch { /* not connected via Web3Auth */ }
+    try { wagmiDisconnect(); } catch { /* not connected via wagmi */ }
+    disconnect(); // clear gameStore
+  }
 
   const puzzle    = getTodayPuzzle();
   const today     = new Date().toISOString().slice(0, 10);
@@ -67,17 +84,57 @@ export default function Home() {
             Play · Climb · Earn daily G$ UBI
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', position: 'relative' }}>
           <div className="chip" style={{ padding: '5px 11px', gap: '5px' }}>
             <Flame size={14} strokeWidth={2} />
             <span style={{ fontSize: '13px' }}>{streak}</span>
           </div>
+
+          {/* Wallet address chip — tap to reveal disconnect */}
+          <button
+            onClick={() => setShowDisconnect(v => !v)}
+            style={{
+              height: '36px', borderRadius: '10px', padding: '0 10px',
+              background: 'var(--surface2)', border: '1px solid var(--line)',
+              font: "700 11px 'Space Mono'", color: 'var(--ink2)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+              letterSpacing: '0.3px',
+            }}
+          >
+            {shortAddr}
+          </button>
+
+          {/* Disconnect popover */}
+          {showDisconnect && (
+            <div style={{
+              position: 'absolute', top: '44px', right: 0, zIndex: 50,
+              background: 'var(--surface)', border: '1.5px solid var(--line)',
+              borderRadius: '12px', padding: '4px',
+              boxShadow: 'var(--shadow-md)',
+              minWidth: '140px',
+            }}>
+              <button
+                onClick={handleDisconnect}
+                style={{
+                  width: '100%', border: 'none', background: 'none',
+                  padding: '10px 14px', borderRadius: '9px',
+                  font: "700 12px 'Space Mono'", color: '#c1432e',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                  textAlign: 'left',
+                }}
+              >
+                <LogOut size={13} strokeWidth={2} />
+                Disconnect
+              </button>
+            </div>
+          )}
+
           <button
             onClick={toggleDark}
             style={{
               width: '36px', height: '36px', borderRadius: '10px',
               background: 'var(--surface2)', border: '1px solid var(--line)',
-              font: '16px serif', cursor: 'pointer', display: 'flex',
+              cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
             }}
             aria-label="Toggle dark mode"
