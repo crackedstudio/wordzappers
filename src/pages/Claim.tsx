@@ -51,7 +51,6 @@ export default function Claim() {
             width: '100px', height: '100px', borderRadius: '50%',
             background: '#00c853', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 8px 28px rgba(0,200,83,.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <Check size={52} strokeWidth={3} color="#fff" />
           </div>
