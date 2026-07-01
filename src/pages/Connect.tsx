@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useWeb3AuthConnect } from '@web3auth/modal/react';
 import { Wallet, Loader2, AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
-import { isMiniPay } from '../lib/wallet';
+import { connectWallet, isMiniPay, hasWallet } from '../lib/wallet';
 
 type LocalPhase = 'idle' | 'wallet-connecting' | 'social-connecting' | 'error';
 
@@ -12,40 +12,33 @@ export default function Connect() {
   const [localPhase, setLocalPhase] = useState<LocalPhase>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // wagmi — injected connector (MetaMask, Valora, MiniPay)
-  const { address, isConnected } = useAccount();
-  const { connectAsync, connectors } = useConnect();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
-
-  // Web3Auth social
+  // Only needed for social login — wagmi picks up the address after Web3Auth connects
+  const { address: wagmiAddress, isConnected } = useAccount();
   const { connect: web3authConnect, loading: socialLoading } = useWeb3AuthConnect();
 
-  const injectedConnector = connectors.find(c => c.id === 'injected');
   const inMiniPay   = isMiniPay();
-  const walletFound = !!injectedConnector && typeof window !== 'undefined' && !!window.ethereum;
+  // Check window.ethereum directly — don't depend on wagmi connectors being set up
+  const walletFound = hasWallet();
 
-  // Sync wagmi address → gameStore once connected
+  // Sync wagmi address → store (fires only after Web3Auth social login completes)
   useEffect(() => {
-    if (isConnected && address) {
-      setWallet(address);
+    if (isConnected && wagmiAddress) {
+      setWallet(wagmiAddress);
     }
-  }, [isConnected, address, setWallet]);
+  }, [isConnected, wagmiAddress, setWallet]);
 
-  // Auto-connect MiniPay on mount
+  // Auto-connect MiniPay on mount via window.ethereum directly
   useEffect(() => {
-    if (inMiniPay && !isConnected && injectedConnector) {
-      connectInjected();
-    }
+    if (inMiniPay) connectWalletDirect();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function connectInjected() {
-    if (!injectedConnector) return;
+  async function connectWalletDirect() {
     setError(null);
     setLocalPhase('wallet-connecting');
     try {
-      await connectAsync({ connector: injectedConnector });
-      // address sync handled by useEffect above
+      const addr = await connectWallet(); // uses window.ethereum directly
+      setWallet(addr);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Connection failed');
       setLocalPhase('error');
@@ -57,15 +50,15 @@ export default function Connect() {
     setLocalPhase('social-connecting');
     try {
       await web3authConnect();
-      // address comes via wagmi's useAccount after Web3Auth connects
+      // address synced via useEffect above once wagmi picks it up
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sign-in failed');
       setLocalPhase('error');
     }
   }
 
-  const walletBusy  = localPhase === 'wallet-connecting';
-  const socialBusy  = localPhase === 'social-connecting' || socialLoading;
+  const walletBusy = localPhase === 'wallet-connecting';
+  const socialBusy = localPhase === 'social-connecting' || socialLoading;
 
   return (
     <div style={{
@@ -76,10 +69,8 @@ export default function Connect() {
       padding: '0 24px',
     }}>
 
-      {/* ── Top spacer ──────────────────────────────────────────────── */}
       <div />
 
-      {/* ── Hero ────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '28px', width: '100%' }}>
 
         {/* Logo */}
@@ -123,10 +114,9 @@ export default function Connect() {
           ))}
         </div>
 
-        {/* ── Auth options ─────────────────────────────────────────── */}
+        {/* Auth options */}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-          {/* Error */}
           {localPhase === 'error' && (
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: '10px',
@@ -140,7 +130,6 @@ export default function Connect() {
             </div>
           )}
 
-          {/* MiniPay auto-connect status */}
           {inMiniPay ? (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
@@ -148,16 +137,17 @@ export default function Connect() {
               background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '16px',
             }}>
               <Loader2 size={18} strokeWidth={2} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
-              <span style={{ font: "600 14px 'Space Mono'", color: 'var(--ink2)' }}>Connecting MiniPay…</span>
+              <span style={{ font: "600 14px 'Space Mono'", color: 'var(--ink2)' }}>Connecting wallet…</span>
             </div>
           ) : (
             <>
-              {/* Option A — Connect existing wallet */}
+              {/* Connect Wallet — uses window.ethereum directly, works with any injected wallet */}
               <button
-                onClick={connectInjected}
+                onClick={connectWalletDirect}
                 disabled={walletBusy || socialBusy || !walletFound}
                 style={{
-                  width: '100%', border: `1.5px solid ${walletFound ? 'var(--ink)' : 'var(--line)'}`,
+                  width: '100%',
+                  border: `1.5px solid ${walletFound ? 'var(--ink)' : 'var(--line)'}`,
                   borderRadius: '16px', padding: '17px',
                   font: '800 15px Archivo', letterSpacing: '0.5px',
                   cursor: (!walletFound || walletBusy || socialBusy) ? 'default' : 'pointer',
@@ -172,21 +162,16 @@ export default function Connect() {
                 {walletBusy
                   ? <Loader2 size={18} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
                   : <Wallet size={18} strokeWidth={2} />}
-                {walletBusy
-                  ? 'Connecting…'
-                  : walletFound
-                    ? 'Connect Wallet'
-                    : 'No wallet detected'}
+                {walletBusy ? 'Connecting…' : walletFound ? 'Connect Wallet' : 'No wallet detected'}
               </button>
 
-              {/* Divider */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
                 <span style={{ font: "400 11px 'Space Mono'", color: 'var(--ink3)', letterSpacing: '1px' }}>OR</span>
                 <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
               </div>
 
-              {/* Option B — Social sign-in via Web3Auth */}
+              {/* Social sign-in via Web3Auth */}
               <button
                 onClick={connectSocial}
                 disabled={walletBusy || socialBusy}
@@ -195,8 +180,7 @@ export default function Connect() {
                   borderRadius: '16px', padding: '17px',
                   font: '800 15px Archivo', letterSpacing: '0.5px',
                   cursor: (walletBusy || socialBusy) ? 'default' : 'pointer',
-                  background: 'var(--surface)',
-                  color: 'var(--ink)',
+                  background: 'var(--surface)', color: 'var(--ink)',
                   opacity: (walletBusy || socialBusy) ? 0.65 : 1,
                   transition: 'opacity .15s',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
@@ -208,7 +192,6 @@ export default function Connect() {
                 {socialBusy ? 'Opening sign-in…' : 'Sign in with Google / Email'}
               </button>
 
-              {/* No wallet links */}
               {!walletFound && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <a href="https://minipay.opera.com" target="_blank" rel="noreferrer" style={{ flex: 1, textDecoration: 'none' }}>
@@ -240,7 +223,6 @@ export default function Connect() {
         </div>
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────────── */}
       <p style={{
         font: "400 11px 'Space Mono'", color: 'var(--ink3)',
         textAlign: 'center', margin: '0 0 max(20px, env(safe-area-inset-bottom, 20px))',
