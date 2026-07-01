@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useAccount } from 'wagmi';
 import { useWeb3Auth, useWeb3AuthConnect } from '@web3auth/modal/react';
 import { Wallet, Loader2, AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
@@ -11,11 +12,44 @@ export default function Connect() {
   const [localPhase, setLocalPhase] = useState<LocalPhase>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  const { web3Auth } = useWeb3Auth();
+  // Keep a ref so the address-extraction effect always reads fresh values
+  const { web3Auth, isConnected: w3aConnected } = useWeb3Auth();
+  const web3AuthRef = useRef(web3Auth);
+  useEffect(() => { web3AuthRef.current = web3Auth; }, [web3Auth]);
+
+  const { address: wagmiAddress } = useAccount();
   const { connect: web3authConnect, loading: socialLoading } = useWeb3AuthConnect();
 
   const inMiniPay   = isMiniPay();
   const walletFound = hasWallet();
+
+  // Reactive extraction: fires whenever Web3Auth finishes connecting (isConnected flips true)
+  // or whenever wagmi resolves the address. Either path lands us in the app.
+  useEffect(() => {
+    if (!w3aConnected) return;
+
+    // wagmi path — most common; wagmi connector sets address after a tick
+    if (wagmiAddress) {
+      setWallet(wagmiAddress);
+      return;
+    }
+
+    // Direct provider path — fallback for when wagmi hasn't updated yet
+    const instance = web3AuthRef.current;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const provider = (instance as any)?.provider;
+    if (!provider) return;
+
+    (async () => {
+      try {
+        const accounts: string[] = await provider.request({ method: 'eth_accounts' });
+        if (accounts?.[0]) setWallet(accounts[0] as `0x${string}`);
+      } catch {
+        // provider not ready yet — wagmiAddress update will re-trigger this effect
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [w3aConnected, wagmiAddress]);
 
   // Auto-connect MiniPay on mount
   useEffect(() => {
@@ -40,18 +74,8 @@ export default function Connect() {
     setLocalPhase('social-connecting');
     try {
       await web3authConnect();
-
-      // Read address directly from the Web3Auth provider — don't rely on wagmi state sync
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const provider = (web3Auth as any)?.provider;
-      if (provider) {
-        const accounts: string[] = await provider.request({ method: 'eth_accounts' });
-        if (accounts?.[0]) {
-          setWallet(accounts[0] as `0x${string}`);
-          return;
-        }
-      }
-      throw new Error('Could not retrieve wallet address after sign-in. Please try again.');
+      // Address is extracted reactively by the useEffect above — no inline read needed.
+      // The effect fires when w3aConnected flips true (or wagmiAddress updates).
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sign-in failed');
       setLocalPhase('error');
