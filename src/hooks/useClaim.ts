@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract } from 'wagmi';
 import { useGameStore } from '../store/gameStore';
-import { checkCitizen, checkAlreadyPlayed, claimOnChain } from '../lib/wallet';
+import { checkCitizen, checkAlreadyPlayed, claimOnChain, scoreTier } from '../lib/wallet';
 import { WORDZAPPER_CONTRACT, WORDZAPPER_ABI } from '../lib/chain';
 
 export type ClaimPhase =
@@ -12,12 +12,6 @@ export type ClaimPhase =
   | 'claiming'
   | 'done'
   | 'error';
-
-function scoreTier(score: number): number {
-  if (score >= 3000) return 2;
-  if (score >= 1500) return 1;
-  return 0;
-}
 
 export function useClaim() {
   const { bestToday, walletAddress, doClaim } = useGameStore();

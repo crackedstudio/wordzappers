@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDisconnect } from 'wagmi';
 import { useWeb3AuthDisconnect } from '@web3auth/modal/react';
@@ -6,8 +6,8 @@ import { Flame, Sun, Moon, AlertTriangle, Sparkles, LogOut } from 'lucide-react'
 import { useGameStore } from '../store/gameStore';
 import BottomNav from '../components/BottomNav';
 import { getTodayPuzzle, DIFFICULTY_LABELS } from '../lib/puzzles';
-import { tileValue } from '../lib/tiles';
 import { getTimeLimit, computeGEarned } from '../lib/scoring';
+import { fetchPoolBalance } from '../lib/wallet';
 
 // Scale preview tiles so they fit the hero card even for 6-letter words
 function heroTileSize(wordLen: number) {
@@ -16,11 +16,12 @@ function heroTileSize(wordLen: number) {
   return                   { w: 20, h: 26, fs: 9  };
 }
 
-const MOCK_TOP3 = [
-  { r: 1, n: 'okaforjoy', s: 1240 },
-  { r: 2, n: 'minty_g',   s: 1090 },
-  { r: 3, n: 'dotun.eth', s: 980 },
-];
+// Format G$ pool balance from wei (18 decimals)
+function formatPool(raw: bigint): string {
+  const g = Number(raw) / 1e18;
+  if (g >= 1000) return `${(g / 1000).toFixed(1)}k`;
+  return g.toFixed(1);
+}
 
 export default function Home() {
   const navigate = useNavigate();
@@ -29,6 +30,14 @@ export default function Home() {
     walletAddress, startRun, startTutorial, toggleDark, dark, disconnect,
   } = useGameStore();
   const [showDisconnect, setShowDisconnect] = useState(false);
+  const [poolBalance, setPoolBalance] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPoolBalance()
+      .then(raw => setPoolBalance(formatPool(raw)))
+      .catch(() => setPoolBalance(null));
+  }, []);
+
   const shortAddr = walletAddress
     ? `${walletAddress.slice(0, 6)}…${walletAddress.slice(-4)}`
     : '';
@@ -282,8 +291,8 @@ export default function Home() {
               <div className="stat-value">{bestToday ?? '—'}</div>
             </div>
             <div className="stat-card" style={{ flex: 1 }}>
-              <div className="stat-label">Your rank</div>
-              <div className="stat-value">#4</div>
+              <div className="stat-label">Pool G$</div>
+              <div className="stat-value">{poolBalance ?? '…'}</div>
             </div>
             <div className="stat-card" style={{ flex: 1 }}>
               <div className="stat-label">Streak</div>
@@ -297,42 +306,18 @@ export default function Home() {
           </button>
 
           {/* ── Leaderboard teaser ────────────────────────────────────── */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
-            <div style={{
+          <button
+            onClick={() => navigate('/leaderboard')}
+            style={{
+              width: '100%', background: 'var(--surface)', border: '1px solid var(--line)',
+              borderRadius: 'var(--r-lg)', padding: '16px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 16px 10px',
-              borderBottom: '1px solid var(--line)',
-            }}>
-              <span className="label-xs">Today's top 3</span>
-              <button
-                onClick={() => navigate('/leaderboard')}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  font: "700 11px 'Space Mono'", color: 'var(--accent)',
-                }}
-              >
-                See all →
-              </button>
-            </div>
-            {MOCK_TOP3.map(r => (
-              <div key={r.r} style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '13px 16px',
-                borderBottom: r.r < 3 ? '1px solid var(--line)' : 'none',
-              }}>
-                <span style={{
-                  width: '24px', height: '24px', borderRadius: '50%',
-                  background: r.r === 1 ? '#ffd700' : r.r === 2 ? '#c0c0c0' : '#cd7f32',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  font: "700 11px 'Space Mono'", color: '#18150f', flexShrink: 0,
-                }}>
-                  {r.r}
-                </span>
-                <span style={{ flex: 1, font: '600 15px Archivo', color: 'var(--ink)' }}>{r.n}</span>
-                <span style={{ font: "700 14px 'Space Mono'", color: 'var(--ink)' }}>{r.s.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ font: '700 14px Archivo', color: 'var(--ink)' }}>Leaderboard</span>
+            <span style={{ font: "700 12px 'Space Mono'", color: 'var(--accent)' }}>Coming soon →</span>
+          </button>
 
         </div>
       </div>

@@ -62,6 +62,22 @@ export async function checkAlreadyPlayed(address: `0x${string}`): Promise<boolea
   });
 }
 
+export async function fetchPoolBalance(): Promise<bigint> {
+  return publicClient().readContract({
+    address:      WORDZAPPER_CONTRACT,
+    abi:          WORDZAPPER_ABI,
+    functionName: 'poolBalance',
+  });
+}
+
+export async function fetchRemainingCap(): Promise<bigint> {
+  return publicClient().readContract({
+    address:      WORDZAPPER_CONTRACT,
+    abi:          WORDZAPPER_ABI,
+    functionName: 'remainingTodayCap',
+  });
+}
+
 export function scoreTier(score: number): 1 | 2 | 3 {
   if (score >= 700) return 3;
   if (score >= 400) return 2;
