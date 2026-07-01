@@ -97,10 +97,13 @@ export default function Claim() {
           </div>
           <div>
             <h2 style={{ font: '800 22px Archivo', color: 'var(--ink)', margin: '0 0 10px', lineHeight: '1.3' }}>
-              One-time identity check
+              Wallet not verified
             </h2>
-            <p style={{ font: "400 13px 'Space Mono'", color: 'var(--ink2)', margin: 0, maxWidth: '280px', lineHeight: '1.6' }}>
-              WordZapper G$ rewards go to real humans only — no bots. Complete GoodDollar's free face verification (takes ~1 min), then come back to claim.
+            <p style={{ font: "400 13px 'Space Mono'", color: 'var(--ink2)', margin: '0 0 12px', maxWidth: '290px', lineHeight: '1.6' }}>
+              This wallet hasn't completed GoodDollar identity verification. G$ rewards go to verified humans only.
+            </p>
+            <p style={{ font: "400 12px 'Space Mono'", color: 'var(--ink3)', margin: 0, maxWidth: '290px', lineHeight: '1.6' }}>
+              If you signed in with Google/email, verify that new wallet address — or disconnect and reconnect with your existing verified wallet instead.
             </p>
           </div>
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>

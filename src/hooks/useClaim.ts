@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useWriteContract } from 'wagmi';
+import { useAccount, useWriteContract } from 'wagmi';
 import { useGameStore } from '../store/gameStore';
-import { checkCitizen, checkAlreadyPlayed } from '../lib/wallet';
+import { checkCitizen, checkAlreadyPlayed, claimOnChain } from '../lib/wallet';
 import { WORDZAPPER_CONTRACT, WORDZAPPER_ABI } from '../lib/chain';
-import { computeGEarned } from '../lib/scoring';
 
 export type ClaimPhase =
   | 'idle'
@@ -28,9 +27,9 @@ export function useClaim() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error,  setError]  = useState<string | null>(null);
 
+  const { isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
 
-  // Run identity + duplicate check once we have an address
   useEffect(() => {
     if (address) checkStatus(address);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +46,7 @@ export function useClaim() {
       if (played)   { doClaim(); setPhase('done'); return; }
       setPhase('ready');
     } catch {
-      // If chain read fails (e.g. RPC hiccup), still allow attempt — contract will reject
+      // RPC hiccup — allow attempt; contract will reject with the real reason
       setPhase('ready');
     }
   }
@@ -57,19 +56,29 @@ export function useClaim() {
     setError(null);
     setPhase('claiming');
     try {
-      const gEarned = computeGEarned(bestToday, 0);
-      const tier = scoreTier(bestToday);
-      const hash = await writeContractAsync({
-        address: WORDZAPPER_CONTRACT,
-        abi: WORDZAPPER_ABI,
-        functionName: 'claimReward',
-        args: [BigInt(bestToday), tier],
-      });
+      let hash: `0x${string}`;
+
+      if (window.ethereum) {
+        // Injected wallet path (MiniPay, MetaMask, Valora, Coinbase Wallet, etc.)
+        // Use direct viem — works regardless of wagmi reconnect state after page reload.
+        hash = await claimOnChain(bestToday);
+      } else if (isConnected) {
+        // Social login path (Web3Auth Google/email) — no window.ethereum, use wagmi connector.
+        hash = await writeContractAsync({
+          address: WORDZAPPER_CONTRACT,
+          abi: WORDZAPPER_ABI,
+          functionName: 'claimReward',
+          args: [BigInt(bestToday), scoreTier(bestToday)],
+        });
+      } else {
+        throw new Error('Wallet session expired — please disconnect and reconnect.');
+      }
+
       setTxHash(hash);
       doClaim();
       setPhase('done');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Transaction failed');
+      setError(e instanceof Error ? e.message : 'Transaction failed. Try again.');
       setPhase('error');
     }
   }
