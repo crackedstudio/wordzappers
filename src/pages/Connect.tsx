@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
-import { useWeb3AuthConnect } from '@web3auth/modal/react';
+import { useWeb3Auth, useWeb3AuthConnect } from '@web3auth/modal/react';
 import { Wallet, Loader2, AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { connectWallet, isMiniPay, hasWallet } from '../lib/wallet';
@@ -12,22 +11,13 @@ export default function Connect() {
   const [localPhase, setLocalPhase] = useState<LocalPhase>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // Only needed for social login — wagmi picks up the address after Web3Auth connects
-  const { address: wagmiAddress, isConnected } = useAccount();
+  const { web3Auth } = useWeb3Auth();
   const { connect: web3authConnect, loading: socialLoading } = useWeb3AuthConnect();
 
   const inMiniPay   = isMiniPay();
-  // Check window.ethereum directly — don't depend on wagmi connectors being set up
   const walletFound = hasWallet();
 
-  // Sync wagmi address → store (fires only after Web3Auth social login completes)
-  useEffect(() => {
-    if (isConnected && wagmiAddress) {
-      setWallet(wagmiAddress);
-    }
-  }, [isConnected, wagmiAddress, setWallet]);
-
-  // Auto-connect MiniPay on mount via window.ethereum directly
+  // Auto-connect MiniPay on mount
   useEffect(() => {
     if (inMiniPay) connectWalletDirect();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -37,7 +27,7 @@ export default function Connect() {
     setError(null);
     setLocalPhase('wallet-connecting');
     try {
-      const addr = await connectWallet(); // uses window.ethereum directly
+      const addr = await connectWallet();
       setWallet(addr);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Connection failed');
@@ -50,7 +40,18 @@ export default function Connect() {
     setLocalPhase('social-connecting');
     try {
       await web3authConnect();
-      // address synced via useEffect above once wagmi picks it up
+
+      // Read address directly from the Web3Auth provider — don't rely on wagmi state sync
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const provider = (web3Auth as any)?.provider;
+      if (provider) {
+        const accounts: string[] = await provider.request({ method: 'eth_accounts' });
+        if (accounts?.[0]) {
+          setWallet(accounts[0] as `0x${string}`);
+          return;
+        }
+      }
+      throw new Error('Could not retrieve wallet address after sign-in. Please try again.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sign-in failed');
       setLocalPhase('error');
