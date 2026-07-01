@@ -10,7 +10,7 @@ const web3AuthContextConfig: Web3AuthContextConfig = {
     chains: [
       {
         chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: '0xA4EC',               // Celo mainnet = 42220
+        chainId: '0xa4ec',               // Celo mainnet = 42220
         rpcTarget: 'https://forno.celo.org',
         displayName: 'Celo Mainnet',
         blockExplorerUrl: 'https://celoscan.io',
@@ -19,7 +19,7 @@ const web3AuthContextConfig: Web3AuthContextConfig = {
         logo: '',
       },
     ],
-    defaultChainId: '0xA4EC',
+    defaultChainId: '0xa4ec',
     modalConfig: {
       connectors: {
         [WALLET_CONNECTORS.AUTH]: {
@@ -31,10 +31,12 @@ const web3AuthContextConfig: Web3AuthContextConfig = {
           },
           showOnModal: true,
         },
-        [WALLET_CONNECTORS.WALLET_CONNECT_V2]: {
-          label: 'WalletConnect',
-          showOnModal: false,
-        },
+        // Hide all external wallet connectors — users connect MetaMask via our
+        // direct window.ethereum button instead, avoiding Web3Auth's SIWW flow
+        // which requires domain whitelisting and chain support checks.
+        [WALLET_CONNECTORS.WALLET_CONNECT_V2]: { label: 'WalletConnect', showOnModal: false },
+        [WALLET_CONNECTORS.METAMASK]:          { label: 'MetaMask',      showOnModal: false },
+        [WALLET_CONNECTORS.COINBASE]:          { label: 'Coinbase',      showOnModal: false },
       },
     },
   },
