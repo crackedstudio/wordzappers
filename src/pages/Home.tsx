@@ -87,7 +87,7 @@ export default function Home() {
       }}>
         <div>
           <h1 style={{ font: '900 22px Archivo', letterSpacing: '-.5px', color: 'var(--ink)', lineHeight: '1' }}>
-            WORD<span style={{ color: 'var(--accent)' }}>ZAPPER</span>
+            WORD<span style={{ color: 'var(--accent)' }}>ZAPPERS</span>
           </h1>
           <p className="label-xs" style={{ marginTop: '3px', color: 'var(--ink3)' }}>
             Play · Climb · Earn daily G$ UBI

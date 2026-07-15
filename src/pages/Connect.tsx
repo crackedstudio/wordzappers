@@ -114,7 +114,7 @@ export default function Connect() {
             font: '900 36px Archivo', letterSpacing: '-1px',
             color: 'var(--ink)', lineHeight: '1', margin: '0 0 10px',
           }}>
-            WORD<span style={{ color: 'var(--accent)' }}>ZAPPER</span>
+            WORD<span style={{ color: 'var(--accent)' }}>ZAPPERS</span>
           </h1>
           <p style={{ font: "400 14px 'Space Mono'", color: 'var(--ink2)', margin: 0 }}>
             Play word ladders. Earn G$ every day.

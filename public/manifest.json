@@ -1,6 +1,6 @@
 {
-  "name": "WordZapper",
-  "short_name": "WordZapper",
+  "name": "WordZappers",
+  "short_name": "WordZappers",
   "description": "Climb the word ladder · earn G$ every day",
   "start_url": "/",
   "display": "standalone",

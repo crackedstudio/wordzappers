@@ -89,7 +89,7 @@ function parseContractError(err: unknown): string {
   if (msg.includes('NotCitizen'))       return 'Your wallet is not GoodDollar verified. Complete face verification first.';
   if (msg.includes('AlreadyPlayed'))    return 'You already claimed today. Come back tomorrow!';
   if (msg.includes('DailyCapReached'))  return 'Daily reward pool is full. Try again tomorrow.';
-  if (msg.includes('InsufficientPool')) return 'Pool is empty. Let the team know at @WordZapper.';
+  if (msg.includes('InsufficientPool')) return 'Pool is empty. Let the team know at @WordZappers.';
   if (msg.includes('User rejected'))    return 'Transaction cancelled.';
   return 'Transaction failed. Check your wallet and try again.';
 }

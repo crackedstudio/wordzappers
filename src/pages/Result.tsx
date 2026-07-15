@@ -132,9 +132,9 @@ export default function Result() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <span style={{ font: "900 13px 'Space Mono'", color: '#f8f3e8', letterSpacing: '1px' }}>
-                WORDZAPPER
+                WORDZAPPERS
               </span>
-              <span style={{ font: "700 12px 'Space Mono'", color: '#a89880' }}>wordzapper.app</span>
+              <span style={{ font: "700 12px 'Space Mono'", color: '#a89880' }}>wordzappers.xyz</span>
             </div>
             <div style={{ font: "700 22px 'Space Mono'", color: 'var(--accent-light)', marginBottom: '8px' }}>
               {puzzle.path[0]} → {target}

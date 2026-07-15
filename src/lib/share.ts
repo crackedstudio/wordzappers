@@ -14,12 +14,12 @@ export function buildShareText(
   const gLine  = gEarned ? `Earned ${gEarned.toFixed(2)} G$ 💚` : '';
 
   return [
-    `WORDZAPPER 🪜 — ${date}`,
+    `WORDZAPPERS 🪜 — ${date}`,
     `${start} → ${target}`,
     dots,
     `Score: ${score}`,
     gLine,
-    `Play & earn G$ at wordzapper.app`,
+    `Play & earn G$ at wordzappers.xyz`,
   ].filter(Boolean).join('\n');
 }
 
