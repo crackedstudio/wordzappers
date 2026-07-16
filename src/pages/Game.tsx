@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lightbulb, Loader2, X, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { getTodayPuzzle } from '../lib/puzzles';
 import { tileValue } from '../lib/tiles';
-import { useHint, MAX_HINTS, HINT_TIME_COST } from '../hooks/useHint';
 
 // Tile dimensions scale with word length so tiles always fit on screen
 function tileMetrics(wordLen: number) {
@@ -23,21 +22,12 @@ export default function Game() {
     advanceRung, resetWrongGuess,
   } = useGameStore();
 
-  const hint = useHint();
-
   const puzzle   = getTodayPuzzle();
   const target   = puzzle.path[puzzle.path.length - 1];
   const nowWord  = builtPath[builtPath.length - 1] ?? puzzle.path[0];
   const nextWord = puzzle.path[builtPath.length] ?? target;
   const wordLen  = target.length;
   const ts       = tileMetrics(wordLen);
-
-  function handleHint() {
-    if (hint.used >= MAX_HINTS || hint.state === 'loading' || !running) return;
-    // Deduct time penalty before fetching
-    useGameStore.setState(s => ({ timeLeft: Math.max(0, s.timeLeft - HINT_TIME_COST) }));
-    hint.requestHint(nowWord, nextWord, target);
-  }
 
   // ── Timer ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -124,39 +114,8 @@ export default function Game() {
           {score}
         </span>
 
-        {/* Hint + Quit */}
+        {/* Quit */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* Hint button */}
-          <button
-            onClick={handleHint}
-            disabled={hint.used >= MAX_HINTS || hint.state === 'loading' || !running}
-            title={`Hint (−${HINT_TIME_COST}s)`}
-            style={{
-              background: hint.used >= MAX_HINTS ? 'var(--surface2)' : 'var(--accent-soft, #fff8e8)',
-              border: '1.5px solid var(--line)',
-              borderRadius: '8px',
-              padding: '4px 8px',
-              display: 'flex', alignItems: 'center', gap: '4px',
-              cursor: hint.used >= MAX_HINTS || !running ? 'default' : 'pointer',
-              opacity: hint.used >= MAX_HINTS ? 0.4 : 1,
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center' }}>
-              {hint.state === 'loading'
-                ? <Loader2 size={14} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
-                : <Lightbulb size={14} strokeWidth={2} />}
-            </span>
-            {/* Remaining hints as dots */}
-            <span style={{ display: 'flex', gap: '3px' }}>
-              {Array.from({ length: MAX_HINTS }).map((_, i) => (
-                <span key={i} style={{
-                  width: '5px', height: '5px', borderRadius: '50%',
-                  background: i < hint.used ? 'var(--ink3)' : 'var(--accent)',
-                }} />
-              ))}
-            </span>
-          </button>
-
           <button
             onClick={() => { useGameStore.setState({ running: false }); navigate('/'); }}
             style={{
@@ -271,52 +230,6 @@ export default function Game() {
           })}
         </div>
       </div>
-
-      {/* ── Hint overlay ────────────────────────────────────────────────── */}
-      {(hint.state === 'shown' || hint.state === 'error') && (
-        <div
-          onClick={hint.dismiss}
-          style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,.45)',
-            display: 'flex', alignItems: 'flex-end',
-            zIndex: 50,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            className="anim-rise"
-            style={{
-              width: '100%',
-              background: 'var(--bg)',
-              borderRadius: '24px 24px 0 0',
-              padding: '24px 24px 36px',
-              boxShadow: '0 -8px 32px rgba(0,0,0,.2)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', font: "700 11px 'Space Mono'", letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--ink2)' }}>
-                <Lightbulb size={13} strokeWidth={2} /> AI Hint ({MAX_HINTS - hint.used} left)
-              </span>
-              <button
-                onClick={hint.dismiss}
-                style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', color: 'var(--ink2)', cursor: 'pointer', padding: '4px' }}
-              >
-                <X size={16} strokeWidth={2} />
-              </button>
-            </div>
-            <p style={{
-              font: '600 17px Archivo', color: 'var(--ink)', lineHeight: '1.5',
-              margin: '0 0 8px',
-            }}>
-              {hint.text}
-            </p>
-            <p style={{ font: "400 11px 'Space Mono'", color: 'var(--ink3)', margin: 0 }}>
-              Tap anywhere to dismiss · −{HINT_TIME_COST}s already deducted
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* ── Status + Confirm ────────────────────────────────────────────── */}
       <div style={{
