@@ -1,9 +1,6 @@
-import { generateDailyPuzzle } from './ai';
-
 export interface Puzzle {
   path:        string[];
   label:       string;
-  isAI?:       boolean;
   difficulty?: 'easy' | 'medium' | 'hard';
 }
 
@@ -127,38 +124,9 @@ let _todayPuzzle: Puzzle | null = null;
 
 export function getTodayPuzzle(): Puzzle {
   if (_todayPuzzle) return _todayPuzzle;
-
-  // Check for cached AI puzzle
-  const dateStr  = getTodayDateStr();
-  const cacheKey = `ai-puzzle-${dateStr}`;
-  const cached   = localStorage.getItem(cacheKey);
-  if (cached) {
-    try {
-      const p = JSON.parse(cached);
-      if (Array.isArray(p.path) && p.path.length >= 3) {
-        _todayPuzzle = { path: p.path, label: 'AI Puzzle', isAI: true, difficulty: 'hard' };
-        return _todayPuzzle;
-      }
-    } catch { /* fall through */ }
-  }
-
-  const day   = getDayOfYear();
-  const diff  = CYCLE[day % CYCLE.length];
-  const pool  = POOL[diff];
+  const day = getDayOfYear();
+  const diff = CYCLE[day % CYCLE.length];
+  const pool = POOL[diff];
   _todayPuzzle = pool[day % pool.length];
   return _todayPuzzle;
-}
-
-export async function prefetchAIPuzzle(): Promise<void> {
-  const dateStr  = getTodayDateStr();
-  const cacheKey = `ai-puzzle-${dateStr}`;
-  if (localStorage.getItem(cacheKey)) return;
-
-  try {
-    const puzzle = await generateDailyPuzzle(dateStr);
-    localStorage.setItem(cacheKey, JSON.stringify(puzzle));
-    _todayPuzzle = null;
-  } catch {
-    // Silently fall back to static puzzle
-  }
 }

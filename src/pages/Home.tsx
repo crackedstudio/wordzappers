@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDisconnect } from 'wagmi';
 import { useWeb3AuthDisconnect } from '@web3auth/modal/react';
-import { Flame, Sun, Moon, AlertTriangle, Sparkles, LogOut } from 'lucide-react';
+import { Flame, Sun, Moon, AlertTriangle, LogOut } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import BottomNav from '../components/BottomNav';
 import { getTodayPuzzle, DIFFICULTY_LABELS } from '../lib/puzzles';
@@ -205,16 +205,7 @@ export default function Home() {
               <p className="label-xs" style={{ color: 'rgba(248,243,232,.7)', margin: 0 }}>
                 {diffLabel} · {rungs} rungs
               </p>
-              {puzzle.isAI && (
-                <span style={{
-                  font: "700 9px 'Space Mono'", letterSpacing: '1px',
-                  background: 'rgba(255,255,255,.12)', color: 'rgba(248,243,232,.7)',
-                  borderRadius: '4px', padding: '2px 6px',
-                }}>
-                  <Sparkles size={9} strokeWidth={2} style={{ marginRight: 3 }} />AI
-                </span>
-              )}
-            </div>
+              </div>
 
             {/* Start → Target preview */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
